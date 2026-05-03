@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewBag.Title = "Xóa mặt hàng";
 }
 
@@ -61,10 +61,11 @@
                         </div>
 
                         <div class="col-md-4 text-end">
-                            <img src="~/images/products/demo.png"
+                            <img src="~/images/nophoto.svg"
                                  class="img-fluid img-thumbnail"
                                  alt="Ảnh mặt hàng"
-                                 style="max-height: 220px;" />
+                                 onerror="this.src='/images/nophoto.svg'"
+                                 style="max-height: 220px; object-fit:cover;" />
                         </div>
                     </div>
                 </form>

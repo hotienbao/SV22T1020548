@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SV22T1020548.Shop.Models;
 using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 
 namespace SV22T1020548.Shop.Controllers
 {

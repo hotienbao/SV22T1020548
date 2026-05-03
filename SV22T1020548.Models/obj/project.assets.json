@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\homework\\SV22T1020548\\SV22T1020548.Models\\SV22T1020548.Models.csproj",
+      "projectUniqueName": "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.Models\\SV22T1020548.Models.csproj",
       "projectName": "SV22T1020548.Models",
-      "projectPath": "D:\\homework\\SV22T1020548\\SV22T1020548.Models\\SV22T1020548.Models.csproj",
+      "projectPath": "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.Models\\SV22T1020548.Models.csproj",
       "packagesPath": "C:\\Users\\hotie\\.nuget\\packages\\",
-      "outputPath": "D:\\homework\\SV22T1020548\\SV22T1020548.Models\\obj\\",
+      "outputPath": "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.Models\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

@@ -1,4 +1,4 @@
-﻿using SV22T1020548.Models.Catalog;
+using SV22T1020548.Models.Catalog;
 using SV22T1020548.Models.Common;
 
 namespace SV22T1020548.DataLayers.Interfaces
@@ -44,6 +44,7 @@ namespace SV22T1020548.DataLayers.Interfaces
         /// <param name="productID"></param>
         /// <returns></returns>
         Task<bool> IsUsedAsync(int productID);
+        Task<int> CountAsync();
 
         /// <summary>
         /// Lấy danh sách thuộc tính của mặt hàng

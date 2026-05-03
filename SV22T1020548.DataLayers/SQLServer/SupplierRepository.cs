@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using Microsoft.Data.SqlClient;
 using SV22T1020548.DataLayers.Interfaces;
 using SV22T1020548.Models.Common;
@@ -9,7 +9,7 @@ namespace SV22T1020548.DataLayers.SQLServer
     /// <summary>
     /// Cài đặt các phép xử lý dữ liệu cho nhà cung cấp (Supplier) trên SQL Server
     /// </summary>
-    public class SupplierRepository : IGenericRepository<Supplier>
+    public class SupplierRepository : ISupplierRepository
     {
         private readonly string _connectionString;
 
@@ -186,6 +186,42 @@ namespace SV22T1020548.DataLayers.SQLServer
 
             int rowsAffected = await connection.ExecuteAsync(sql, parameters);
             return rowsAffected > 0;
+        }
+
+        public async Task<bool> InUseEmailAsync(string email, int excludeSupplierID = 0)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            string sql = @"
+                SELECT COUNT(*)
+                FROM Suppliers
+                WHERE LOWER(Email) = @Email
+                AND SupplierID <> @ExcludeID";
+
+            int count = await connection.ExecuteScalarAsync<int>(sql, new
+            {
+                Email = (email ?? "").Trim().ToLowerInvariant(),
+                ExcludeID = excludeSupplierID
+            });
+
+            return count > 0;
+        }
+
+        public async Task<bool> InUsePhoneAsync(string phone, int excludeSupplierID = 0)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            string sql = @"
+                SELECT COUNT(*)
+                FROM Suppliers
+                WHERE Phone = @Phone
+                AND SupplierID <> @ExcludeID";
+
+            int count = await connection.ExecuteScalarAsync<int>(sql, new
+            {
+                Phone = (phone ?? "").Trim(),
+                ExcludeID = excludeSupplierID
+            });
+
+            return count > 0;
         }
     }
 }

@@ -1,49 +1,167 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - SV22T1020548.Shop</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <title>@(ViewData["Title"] != null ? ViewData["Title"] + " – HTB Shop" : "HTB Shop")</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/SV22T1020548.Shop.styles.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">SV22T1020548.Shop</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+@{
+    var user = Context.Session.GetObject<WebUserData>("user");
+    var cart = Context.Session.GetObject<List<CartItem>>("cart") ?? new List<CartItem>();
+    int cartCount = cart.Sum(x => x.Quantity);
+}
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - SV22T1020548.Shop - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+    <div class="container">
+        <a class="navbar-brand text-warning" asp-controller="Home" asp-action="Index">
+            <i class="bi bi-shop me-1"></i>HTB Shop
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarMain">
+            <!-- Search nhanh -->
+            <form class="d-flex mx-auto" style="width:320px" method="get" asp-controller="Product" asp-action="Index">
+                <input name="searchValue" class="form-control form-control-sm me-1"
+                       placeholder="Tìm sản phẩm..." value="@Context.Request.Query["searchValue"]" />
+                <button class="btn btn-warning btn-sm" type="submit">
+                    <i class="bi bi-search"></i>
+                </button>
+            </form>
+
+            <ul class="navbar-nav ms-auto align-items-center gap-1">
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="Home" asp-action="Index">
+                        <i class="bi bi-house-door"></i> Trang chủ
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="Product" asp-action="Index">
+                        <i class="bi bi-grid"></i> Sản phẩm
+                    </a>
+                </li>
+
+                <!-- GIỎ HÀNG -->
+                <li class="nav-item">
+                    <a class="nav-link position-relative" asp-controller="Cart" asp-action="Index">
+                        <i class="bi bi-cart3 fs-5"></i>
+                        @if (cartCount > 0)
+                        {
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger cart-badge">
+                                @(cartCount > 99 ? "99+" : cartCount.ToString())
+                            </span>
+                        }
+                    </a>
+                </li>
+
+                @if (user != null)
+                {
+                    <!-- Đã đăng nhập -->
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Order" asp-action="History">
+                            <i class="bi bi-bag-check"></i> Đơn hàng
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center gap-1" href="#" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle fs-5"></i>
+                            <span class="d-none d-lg-inline">@user.CustomerName</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow">
+                            <li><h6 class="dropdown-header">@user.Email</h6></li>
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li>
+                                <a class="dropdown-item" asp-controller="Account" asp-action="Profile">
+                                    <i class="bi bi-person me-2"></i>Hồ sơ cá nhân
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword">
+                                    <i class="bi bi-key me-2"></i>Đổi mật khẩu
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" asp-controller="Order" asp-action="History">
+                                    <i class="bi bi-clock-history me-2"></i>Lịch sử mua hàng
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li>
+                                <a class="dropdown-item text-danger" asp-controller="Account" asp-action="Logout">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                }
+                else
+                {
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Account" asp-action="Login">
+                            <i class="bi bi-box-arrow-in-right"></i> Đăng nhập
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-warning btn-sm ms-1" asp-controller="Account" asp-action="Register">
+                            Đăng ký
+                        </a>
+                    </li>
+                }
+            </ul>
         </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+    </div>
+</nav>
+
+<!-- Thông báo chung (TempData) -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible alert-float fade show shadow" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible alert-float fade show shadow" role="alert">
+        <i class="bi bi-exclamation-circle-fill me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button>
+    </div>
+}
+
+<!-- BODY -->
+<main class="container py-4" style="min-height: 70vh;">
+    @RenderBody()
+</main>
+
+<!-- FOOTER -->
+<footer class="py-4 mt-5">
+    <div class="container text-center">
+        <div class="mb-2">
+            <a href="#" class="text-light me-3 text-decoration-none"><i class="bi bi-facebook"></i></a>
+            <a href="#" class="text-light me-3 text-decoration-none"><i class="bi bi-instagram"></i></a>
+            <a href="#" class="text-light text-decoration-none"><i class="bi bi-tiktok"></i></a>
+        </div>
+        <p class="mb-0 small">&copy; 2026 <strong class="text-warning">HTB Shop</strong> – SV22T1020548. All rights reserved.</p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Auto-dismiss alerts after 4s
+    setTimeout(() => {
+        document.querySelectorAll('.alert-float').forEach(el => {
+            const bsAlert = bootstrap.Alert.getOrCreateInstance(el);
+            if (bsAlert) bsAlert.close();
+        });
+    }, 4000);
+</script>
+@await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

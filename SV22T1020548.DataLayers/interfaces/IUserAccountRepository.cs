@@ -16,13 +16,13 @@ namespace SV22T1020548.DataLayers.Interfaces
         /// Trả về thông tin của tài khoản nếu thông tin đăng nhập hợp lệ,
         /// ngược lại trả về null
         /// </returns>
-        Task<UserAccount?> Authorize(string userName, string password);
+        Task<UserAccount?> AuthorizeAsync(string userName, string password);
         /// <summary>
         /// Đổi mật khẩu của tài khoản
         /// </summary>
         /// <param name="userName"></param>
         /// <param name="password"></param>
         /// <returns></returns>
-        Task<bool> ChangePassword(string userName, string password);
+        Task<bool> ChangePasswordAsync(string userName, string password);
     }
 }

@@ -1,7 +1,9 @@
-﻿<aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+<aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
     <div class="sidebar-brand">
         <a href="#" class="brand-link">
-            <img src="~/lib/adminlte/assets/img/AdminLTELogo.png" alt="Logo" class="brand-image opacity-75 shadow" />
+            <img src="~/lib/adminlte/assets/img/AdminLTELogo.png"
+                 onerror="this.src='/images/nophoto.svg'"
+                 alt="Logo" class="brand-image opacity-75 shadow" style="object-fit:cover" />
             <span class="brand-text fw-light">HTB Shop</span>
         </a>
     </div>    
@@ -87,15 +89,15 @@
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a href="~/Order/Create" class="nav-link">
-                                <i class="nav-icon bi bi-cart-plus"></i>
-                                <p>Lập đơn hàng</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
                             <a href="~/Order" class="nav-link">
                                 <i class="nav-icon bi bi-receipt"></i>
                                 <p>Quản lý đơn hàng</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="~/Order/Create" class="nav-link">
+                                <i class="nav-icon bi bi-cart-plus"></i>
+                                <p>Lập đơn hàng</p>
                             </a>
                         </li>
                     </ul>

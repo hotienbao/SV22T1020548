@@ -1,4 +1,5 @@
-﻿using SV22T1020548.Models.Common;
+using SV22T1020548.Models.Common;
+using SV22T1020548.Models;
 using SV22T1020548.Models.Sales;
 
 namespace SV22T1020548.DataLayers.Interfaces
@@ -14,6 +15,7 @@ namespace SV22T1020548.DataLayers.Interfaces
         /// <param name="input"></param>
         /// <returns></returns>
         Task<PagedResult<OrderViewInfo>> ListAsync(OrderSearchInput input);
+        Task<PagedResult<OrderViewInfo>> ListByCustomerAsync(int customerID, int page, int pageSize, OrderStatusEnum? status = null);
         /// <summary>
         /// Lấy thông tin 1 đơn hàng
         /// </summary>
@@ -72,5 +74,14 @@ namespace SV22T1020548.DataLayers.Interfaces
         /// <param name="productID"></param>
         /// <returns></returns>
         Task<bool> DeleteDetailAsync(int orderID, int productID);
+
+        Task<int> InitOrderAsync(Order order, List<OrderDetail> details);
+        Task<bool> UpdateOrderStatusAsync(int orderID, OrderStatusEnum newStatus, int? employeeID = null, string? rejectNote = null);
+        Task<bool> RestoreOrderAsync(int orderID, int? employeeID = null);
+        Task<int> CountAsync();
+        Task<decimal> GetTodayRevenueAsync();
+        Task<List<PendingOrderItem>> ListPendingOrdersAsync();
+        Task<List<TopProductItem>> ListTopProductsAsync(int top = 5);
+        Task<List<decimal>> ListRevenueByMonthsAsync(int year);
     }
 }

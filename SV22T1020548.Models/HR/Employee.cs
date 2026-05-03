@@ -1,4 +1,4 @@
-﻿namespace SV22T1020548.Models.HR
+namespace SV22T1020548.Models.HR
 {
     /// <summary>
     /// Nhân viên
@@ -36,6 +36,10 @@
         /// <summary>
         /// Nhân viên đang làm việc hay không?
         /// </summary>
-        public bool? IsWorking { get; set; }        
+        public bool? IsWorking { get; set; }
+        /// <summary>
+        /// Danh sách quyền, phân tách bằng dấu ';'
+        /// </summary>
+        public string? RoleNames { get; set; }
     }
 }

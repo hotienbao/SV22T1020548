@@ -1,93 +1,134 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using SV22T1020548.Admin.AppCodes;
 using SV22T1020548.BusinessLayers;
 using SV22T1020548.Models.Common;
+using SV22T1020548.Models.Partner;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace SV22T1020548.Admin.Controllers
 {
+    [Authorize] // BƯỚC 1: BẢO MẬT - Khóa Controller, bắt buộc đăng nhập
     public class ShipperController : Controller
     {
-        // ========================================================
-        // QUẢN LÝ NGƯỜI GIAO HÀNG (SHIPPER)
-        // ========================================================
+        private const string SHIPPER_SEARCH = "ShipperSearchInput";
 
-        /// <summary>
-        /// Giao diện hiển thị danh sách người giao hàng
-        /// </summary>
-        public async Task<IActionResult> Index(string searchValue = "", int page = 1)
+        public IActionResult Index()
         {
-            ViewBag.Title = "Quản lý nhân viên giao hàng";
-            ViewBag.SearchValue = searchValue;
-
-            // Khởi tạo thông tin tìm kiếm và phân trang
-            var input = new PaginationSearchInput
+            var input = ApplicationContext.GetSessionData<PaginationSearchInput>(SHIPPER_SEARCH) ?? new PaginationSearchInput()
             {
-                Page = page,
-                PageSize = 20, // Số dòng hiển thị trên mỗi trang
-                SearchValue = searchValue ?? ""
+                Page = 1,
+                PageSize = 20,
+                SearchValue = ""
             };
+            return View(input);
+        }
 
-            // Gọi Business Layer để lấy dữ liệu từ DB
+        public async Task<IActionResult> Search(PaginationSearchInput input)
+        {
+            ApplicationContext.SetSessionData(SHIPPER_SEARCH, input);
             var result = await PartnerDataService.ListShippersAsync(input);
 
-            // Truyền kết quả ra View
-            return View(result);
+            // BƯỚC 2: FIX LỖI AJAX - Phải trả về PartialView để nhúng vào thẻ <div>
+            return PartialView("Search", result);
         }
 
-        /// <summary>
-        /// Giao diện form thêm mới người giao hàng
-        /// </summary>
         public IActionResult Create()
         {
-            ViewBag.Title = "Thêm mới nhân viên giao hàng";
-            // Tái sử dụng View "Edit" cho chức năng Create
-            return View("Edit");
+            ViewBag.Title = "Bổ sung người giao hàng";
+            var data = new Shipper() { ShipperID = 0 };
+            return View("Edit", data);
         }
 
-        /// <summary>
-        /// Giao diện form cập nhật thông tin người giao hàng
-        /// </summary>
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id = 0)
         {
-            ViewBag.Title = "Cập nhật nhân viên giao hàng";
-            // TODO: Lấy thông tin Shipper theo 'id' từ DB và truyền sang View
-            return View();
+            ViewBag.Title = "Cập nhật người giao hàng";
+            var shipper = await PartnerDataService.GetShipperAsync(id);
+            if (shipper == null) return RedirectToAction("Index");
+
+            return View(shipper);
         }
 
-        /// <summary>
-        /// Xử lý lưu dữ liệu từ form Thêm/Sửa (POST)
-        /// </summary>
         [HttpPost]
-        public IActionResult Save(int shipperId, string shipperName, string phone)
+        public async Task<IActionResult> Save(Shipper data)
         {
-            // TODO: Kiểm tra tính hợp lệ của dữ liệu đầu vào (Validation)
-            // TODO: Nếu shipperId == 0 -> Thực hiện lệnh Insert vào CSDL
-            // TODO: Nếu shipperId > 0 -> Thực hiện lệnh Update vào CSDL
+            // BƯỚC 3: CHUẨN HÓA DỮ LIỆU - Cắt khoảng trắng dư thừa
+            data.ShipperName = data.ShipperName?.Trim() ?? "";
+            data.Phone = data.Phone?.Trim() ?? "";
 
-            // Sau khi lưu xong, quay về trang danh sách
+            // VALIDATE
+            if (string.IsNullOrWhiteSpace(data.ShipperName))
+                ModelState.AddModelError(nameof(data.ShipperName), "Tên người giao hàng không được để trống");
+
+            if (string.IsNullOrWhiteSpace(data.Phone))
+                ModelState.AddModelError(nameof(data.Phone), "Điện thoại không được để trống");
+            else
+            {
+                int digits = data.Phone.Count(char.IsDigit);
+                if (digits < 7 || digits > 20)
+                    ModelState.AddModelError("Phone", "Số điện thoại phải có từ 7 đến 20 chữ số");
+            }
+
+            if (!string.IsNullOrWhiteSpace(data.Phone))
+            {
+                bool inUsePhone = await PartnerDataService.InUseShipperPhoneAsync(data.Phone, data.ShipperID);
+                if (inUsePhone)
+                    ModelState.AddModelError("Phone", "Số điện thoại này đã được sử dụng!");
+            }
+
+            // XỬ LÝ LỖI
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Title = data.ShipperID == 0 ? "Bổ sung người giao hàng" : "Cập nhật người giao hàng";
+                return View("Edit", data);
+            }
+
+            // LƯU DB
+            if (data.ShipperID == 0)
+                await PartnerDataService.AddShipperAsync(data);
+            else
+                await PartnerDataService.UpdateShipperAsync(data);
+
             return RedirectToAction("Index");
         }
 
-        /// <summary>
-        /// Giao diện xác nhận xóa người giao hàng (GET)
-        /// </summary>
         [HttpGet]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            ViewBag.Title = "Xóa nhân viên giao hàng";
-            // TODO: Lấy thông tin Shipper cần xóa để hiển thị cảnh báo trên View
-            // Lưu ý: Kiểm tra xem Shipper này có đang gắn với đơn hàng nào không trước khi cho phép xóa.
-            return View();
+            ViewBag.Title = "Xóa người giao hàng";
+            var shipper = await PartnerDataService.GetShipperAsync(id);
+            if (shipper == null) return RedirectToAction("Index");
+            return View(shipper);
         }
 
-        /// <summary>
-        /// Thực hiện xóa người giao hàng sau khi xác nhận (POST)
-        /// </summary>
         [HttpPost]
-        public IActionResult Delete(int id, bool confirm)
+        public async Task<IActionResult> Delete(int id, bool confirm = true)
         {
-            // TODO: Thực thi câu lệnh Delete trong Database
-            return RedirectToAction("Index");
+            try
+            {
+                bool inUse = await PartnerDataService.IsUsedShipperAsync(id);
+                if (inUse)
+                {
+                    TempData["ErrorMessage"] = "Không thể xóa người giao hàng này vì đã có dữ liệu giao hàng liên quan!";
+                    return RedirectToAction("Index");
+                }
+
+                bool deleted = await PartnerDataService.DeleteShipperAsync(id);
+                if (!deleted)
+                {
+                    TempData["ErrorMessage"] = "Không thể xóa vì dữ liệu đang được sử dụng ở nơi khác.";
+                    return RedirectToAction("Index");
+                }
+
+                TempData["SuccessMessage"] = "Đã xóa người giao hàng thành công.";
+                return RedirectToAction("Index");
+            }
+            catch
+            {
+                TempData["ErrorMessage"] = "Không thể xóa vì dữ liệu đang được sử dụng ở nơi khác.";
+                return RedirectToAction("Index");
+            }
         }
     }
 }

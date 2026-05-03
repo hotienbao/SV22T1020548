@@ -1,75 +1,85 @@
-using SV22T1020548.Admin;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using System.Globalization;
+using Microsoft.AspNetCore.Http;
 using SV22T1020548.Admin.AppCodes;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// 🔥 SERVICES
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddControllersWithViews()
-                .AddMvcOptions(option =>
-                {
-                    option.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
-                });
-
-// Configure Authentication
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddCookie(option =>
-                {
-                    option.Cookie.Name = "LiteCommerce.Admin";
-                    option.LoginPath = "/Account/Login";
-                    option.AccessDeniedPath = "/Account/AccessDenied";
-                    option.ExpireTimeSpan = TimeSpan.FromDays(7);
-                    option.SlidingExpiration = true;
-                    option.Cookie.HttpOnly = true;
-                    option.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-                });
-
-// Configure Session
-builder.Services.AddSession(option =>
+builder.Services.AddSession(options =>
 {
-    option.IdleTimeout = TimeSpan.FromHours(2);
-    option.Cookie.HttpOnly = true;
-    option.Cookie.IsEssential = true;
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.Name = "SV22T1020548.Admin.Session";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    // Tránh bị hết hạn cookie quá sớm => giảm rơi đăng nhập
+    options.Cookie.MaxAge = TimeSpan.FromDays(7);
 });
+builder.Services.AddControllersWithViews();
+
+// 🔐 AUTH
+builder.Services
+    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.AccessDeniedPath = "/Account/Login";
+        options.Cookie.Name = "SV22T1020548.Auth";
+        options.ExpireTimeSpan = TimeSpan.FromDays(7);
+        options.SlidingExpiration = true;
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Home/Error");
-}
-app.UseStaticFiles();
-app.UseRouting();
-app.UseAuthentication();
-app.UseAuthorization();
-app.UseSession();
+// 🔥 FIX ĐÚNG CHUẨN ApplicationContext
+ApplicationContext.Configure(
+    app.Services.GetRequiredService<IHttpContextAccessor>(),
+    app.Services.GetRequiredService<IWebHostEnvironment>(),
+    builder.Configuration
+);
 
-//Configure Routing
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
-
-//Configure default format
+// 🌐 CULTURE
 var cultureInfo = new CultureInfo("vi-VN");
 CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
 CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
-//Configure Application Context
-ApplicationContext.Configure
-(
-    httpContextAccessor: app.Services.GetRequiredService<IHttpContextAccessor>(),
-    webHostEnvironment: app.Services.GetRequiredService<IWebHostEnvironment>(),
-    configuration: app.Configuration
+// ⚠️ ERROR HANDLING
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Home/Error");
+}
+
+// STATIC
+app.UseStaticFiles();
+
+app.UseRouting();
+
+// 🔥 SESSION TRƯỚC AUTH (QUAN TRỌNG)
+app.UseSession();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+// ROUTE
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}"
 );
 
-//Get Connection String from appsettings.json
-string connectionString = builder.Configuration.GetConnectionString("LiteCommerceDB")
-    ?? throw new InvalidOperationException("ConnectionString 'LiteCommerceDB' not found.");
+// 🔥 FIX NULL CONNECTION STRING
+string connectionString =
+    builder.Configuration.GetConnectionString("LiteCommerceDB") ?? "";
 
-// Initialize Business Layer Configuration
+if (string.IsNullOrEmpty(connectionString))
+{
+    throw new Exception("Connection string 'LiteCommerceDB' không tồn tại!");
+}
+
+// INIT DB
 SV22T1020548.BusinessLayers.Configuration.Initialize(connectionString);
 
 app.Run();

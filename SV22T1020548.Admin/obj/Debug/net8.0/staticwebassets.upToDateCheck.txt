@@ -1,6 +1,12 @@
 wwwroot\css\site.css
 wwwroot\favicon.ico
+wwwroot\images\employees\639100294353413658_Ảnh chụp màn hình 2026-03-17 075243.png
+wwwroot\images\employees\639100295961975638_Ảnh chụp màn hình 2026-03-17 075255.png
 wwwroot\images\employees\nophoto.png
+wwwroot\images\nophoto.svg
+wwwroot\images\products\639103031345454564_bb3b3980-4038-448e-afe1-5151d7f1c658.png
+wwwroot\images\products\639104751804846425_c9ee5350-0fcc-4493-981b-7b6786e9825c.png
+wwwroot\images\products\639104775198069597_1f12ac2e-22af-4285-b7ae-682a9e9b23b1.png
 wwwroot\images\products\demo.png
 wwwroot\images\products\nophoto.png
 wwwroot\js\site.js

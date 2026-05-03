@@ -1,8 +1,10 @@
-﻿using Dapper;
+using Dapper;
 using Microsoft.Data.SqlClient;
 using SV22T1020548.DataLayers.Interfaces;
 using SV22T1020548.Models.Common;
 using SV22T1020548.Models.Partner;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace SV22T1020548.DataLayers.SQLServer
 {
@@ -13,168 +15,199 @@ namespace SV22T1020548.DataLayers.SQLServer
     {
         private readonly string _connectionString;
 
-        /// <summary>
-        /// Khởi tạo repository với chuỗi kết nối
-        /// </summary>
-        /// <param name="connectionString">Chuỗi kết nối đến CSDL SQL Server</param>
         public CustomerRepository(string connectionString)
         {
             _connectionString = connectionString;
         }
 
-        /// <summary>
-        /// Thêm mới một khách hàng vào CSDL
-        /// </summary>
-        /// <param name="data">Thông tin khách hàng cần thêm</param>
-        /// <returns>Mã khách hàng vừa được tạo (CustomerID)</returns>
+        // ── Thêm mới (không có mật khẩu – dùng ở Admin) ──────────────────────
         public async Task<int> AddAsync(Customer data)
         {
             using var connection = new SqlConnection(_connectionString);
             string sql = @"
-                INSERT INTO Customers (CustomerName, ContactName, Province, Address, Phone, Email, IsLocked)
-                VALUES (@CustomerName, @ContactName, @Province, @Address, @Phone, @Email, @IsLocked);
+                INSERT INTO Customers
+                    (CustomerName, ContactName, Province, Address, Phone, Email, IsLocked)
+                VALUES
+                    (@CustomerName, @ContactName, @Province, @Address, @Phone, @Email, @IsLocked);
                 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
-            var parameters = new
+            return await connection.ExecuteScalarAsync<int>(sql, new
             {
-                data.CustomerName,
-                data.ContactName,
-                data.Province,
-                data.Address,
-                data.Phone,
-                data.Email,
-                data.IsLocked
-            };
-
-            return await connection.ExecuteScalarAsync<int>(sql, parameters);
+                CustomerName = (data.CustomerName ?? "").Trim(),
+                ContactName = (data.ContactName ?? "").Trim(),
+                Province = (data.Province ?? "").Trim(),
+                Address = (data.Address ?? "").Trim(),
+                Phone = (data.Phone ?? "").Trim(),
+                Email = (data.Email ?? "").Trim().ToLower(),
+                IsLocked = data.IsLocked ?? false
+            });
         }
 
-        /// <summary>
-        /// Xóa một khách hàng theo mã (ID)
-        /// </summary>
-        /// <param name="id">Mã khách hàng cần xóa</param>
-        /// <returns>True nếu xóa thành công, ngược lại False</returns>
+        // ── Thêm mới kèm mật khẩu (dùng ở Shop – chức năng đăng ký) ──────────
+        public async Task<int> AddWithPasswordAsync(Customer data, string password)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            string sql = @"
+                INSERT INTO Customers
+                    (CustomerName, ContactName, Province, Address, Phone, Email, Password, IsLocked)
+                VALUES
+                    (@CustomerName, @ContactName, @Province, @Address, @Phone, @Email, @Password, 0);
+                SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+            return await connection.ExecuteScalarAsync<int>(sql, new
+            {
+                CustomerName = (data.CustomerName ?? "").Trim(),
+                ContactName = string.IsNullOrWhiteSpace(data.ContactName)
+                    ? (data.CustomerName ?? "").Trim()
+                    : (data.ContactName ?? "").Trim(),
+                Province = (data.Province ?? "").Trim(),
+                Address = (data.Address ?? "").Trim(),
+                Phone = (data.Phone ?? "").Trim(),
+                Email = (data.Email ?? "").Trim().ToLower(),
+                Password = ToMD5((password ?? "").Trim())
+            });
+        }
+
+        // ── Kiểm tra email trùng ───────────────────────────────────────────────
+        public async Task<bool> ValidateEmailAsync(string email, int excludeCustomerID = 0)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            string sql = @"
+                SELECT COUNT(*)
+                FROM   Customers
+                WHERE  Email = @Email
+                AND    CustomerID <> @ExcludeID";
+
+            int count = await connection.ExecuteScalarAsync<int>(sql, new
+            {
+                Email = email.Trim().ToLower(),
+                ExcludeID = excludeCustomerID
+            });
+            return count == 0;   // true = chưa bị trùng = hợp lệ
+        }
+
+        public async Task<bool> InUseEmailAsync(string email, int excludeCustomerID = 0)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            string sql = @"
+                SELECT COUNT(*)
+                FROM Customers
+                WHERE LOWER(Email) = @Email
+                AND CustomerID <> @ExcludeID";
+
+            int count = await connection.ExecuteScalarAsync<int>(sql, new
+            {
+                Email = (email ?? "").Trim().ToLowerInvariant(),
+                ExcludeID = excludeCustomerID
+            });
+
+            return count > 0;
+        }
+
+        public async Task<bool> InUsePhoneAsync(string phone, int excludeCustomerID = 0)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            string sql = @"
+                SELECT COUNT(*)
+                FROM Customers
+                WHERE Phone = @Phone
+                AND CustomerID <> @ExcludeID";
+
+            int count = await connection.ExecuteScalarAsync<int>(sql, new
+            {
+                Phone = (phone ?? "").Trim(),
+                ExcludeID = excludeCustomerID
+            });
+
+            return count > 0;
+        }
+
+        public async Task<int> CountAsync()
+        {
+            using var connection = new SqlConnection(_connectionString);
+            return await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM Customers");
+        }
+
+        // ── Xóa ───────────────────────────────────────────────────────────────
         public async Task<bool> DeleteAsync(int id)
         {
             using var connection = new SqlConnection(_connectionString);
             string sql = "DELETE FROM Customers WHERE CustomerID = @CustomerID";
-
-            var parameters = new { CustomerID = id };
-
-            int rowsAffected = await connection.ExecuteAsync(sql, parameters);
-            return rowsAffected > 0;
+            return await connection.ExecuteAsync(sql, new { CustomerID = id }) > 0;
         }
 
-        /// <summary>
-        /// Lấy thông tin chi tiết của một khách hàng theo mã (ID)
-        /// </summary>
-        /// <param name="id">Mã khách hàng</param>
-        /// <returns>Đối tượng Customer, trả về null nếu không tìm thấy</returns>
+        // ── Lấy theo ID ───────────────────────────────────────────────────────
         public async Task<Customer?> GetAsync(int id)
         {
             using var connection = new SqlConnection(_connectionString);
-            string sql = "SELECT * FROM Customers WHERE CustomerID = @CustomerID";
-
-            var parameters = new { CustomerID = id };
-
-            return await connection.QueryFirstOrDefaultAsync<Customer>(sql, parameters);
+            return await connection.QueryFirstOrDefaultAsync<Customer>(
+                "SELECT * FROM Customers WHERE CustomerID = @CustomerID",
+                new { CustomerID = id });
         }
 
-        /// <summary>
-        /// Kiểm tra xem khách hàng có đang được sử dụng hay không 
-        /// (Kiểm tra xem khách hàng này đã có đơn hàng nào chưa)
-        /// </summary>
-        /// <param name="id">Mã khách hàng cần kiểm tra</param>
-        /// <returns>True nếu đang có đơn hàng (không được xóa), ngược lại False</returns>
+        // ── Kiểm tra đang dùng ────────────────────────────────────────────────
         public async Task<bool> IsUsed(int id)
         {
             using var connection = new SqlConnection(_connectionString);
-            // Bảng Orders có khóa ngoại CustomerID tham chiếu đến Customers
             string sql = @"
-                IF EXISTS (SELECT 1 FROM Orders WHERE CustomerID = @CustomerID)
-                    SELECT 1;
-                ELSE
-                    SELECT 0;";
-
-            var parameters = new { CustomerID = id };
-
-            return await connection.ExecuteScalarAsync<bool>(sql, parameters);
+                SELECT CASE WHEN EXISTS (
+                    SELECT 1 FROM Orders WHERE CustomerID = @CustomerID
+                ) THEN 1 ELSE 0 END";
+            return await connection.ExecuteScalarAsync<bool>(sql, new { CustomerID = id });
         }
 
-        /// <summary>
-        /// Tìm kiếm và lấy danh sách khách hàng dưới dạng phân trang
-        /// </summary>
-        /// <param name="input">Thông tin tìm kiếm và phân trang</param>
-        /// <returns>Đối tượng PagedResult chứa danh sách dữ liệu và thông tin trang</returns>
+        // ── Danh sách phân trang ──────────────────────────────────────────────
         public async Task<PagedResult<Customer>> ListAsync(PaginationSearchInput input)
         {
             using var connection = new SqlConnection(_connectionString);
-            string searchValue = $"%{input.SearchValue}%";
+            string sv = $"%{input.SearchValue}%";
 
-            // 1. Câu lệnh đếm tổng số dòng thỏa mãn điều kiện tìm kiếm
-            string countSql = @"
-                SELECT COUNT(*) 
-                FROM Customers 
-                WHERE (@SearchValue = N'%%') 
-                   OR (CustomerName LIKE @SearchValue) 
-                   OR (ContactName LIKE @SearchValue)
-                   OR (Phone LIKE @SearchValue)
-                   OR (Email LIKE @SearchValue)";
+            string condition = @"
+                (@sv = N'%%'
+                 OR CustomerName LIKE @sv
+                 OR ContactName  LIKE @sv
+                 OR Phone        LIKE @sv
+                 OR Email        LIKE @sv)";
 
-            // 2. Câu lệnh lấy dữ liệu có phân trang
-            string dataSql = @"
-                SELECT * FROM Customers 
-                WHERE (@SearchValue = N'%%') 
-                   OR (CustomerName LIKE @SearchValue) 
-                   OR (ContactName LIKE @SearchValue)
-                   OR (Phone LIKE @SearchValue)
-                   OR (Email LIKE @SearchValue)
-                ORDER BY CustomerName";
+            string countSql = $"SELECT COUNT(*) FROM Customers WHERE {condition}";
+            string dataSql  = $@"
+                SELECT * FROM Customers
+                WHERE  {condition}
+                ORDER  BY CustomerName";
 
             if (input.PageSize > 0)
-            {
                 dataSql += " OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
-            }
 
-            var parameters = new
-            {
-                SearchValue = searchValue,
-                Offset = input.Offset,
-                PageSize = input.PageSize
-            };
+            var p = new { sv, Offset = input.Offset, PageSize = input.PageSize };
 
-            int rowCount = await connection.ExecuteScalarAsync<int>(countSql, parameters);
-            var dataItems = await connection.QueryAsync<Customer>(dataSql, parameters);
+            int rowCount = await connection.ExecuteScalarAsync<int>(countSql, p);
+            var items    = await connection.QueryAsync<Customer>(dataSql, p);
 
             return new PagedResult<Customer>
             {
-                Page = input.Page,
-                PageSize = input.PageSize,
-                RowCount = rowCount,
-                DataItems = dataItems.ToList()
+                Page      = input.Page,
+                PageSize  = input.PageSize,
+                RowCount  = rowCount,
+                DataItems = items.ToList()
             };
         }
 
-        /// <summary>
-        /// Cập nhật thông tin của một khách hàng
-        /// </summary>
-        /// <param name="data">Dữ liệu khách hàng đã chỉnh sửa</param>
-        /// <returns>True nếu cập nhật thành công, ngược lại False</returns>
+        // ── Cập nhật ─────────────────────────────────────────────────────────
         public async Task<bool> UpdateAsync(Customer data)
         {
             using var connection = new SqlConnection(_connectionString);
             string sql = @"
-                UPDATE Customers 
-                SET CustomerName = @CustomerName,
-                    ContactName = @ContactName,
-                    Province = @Province,
-                    Address = @Address,
-                    Phone = @Phone,
-                    Email = @Email,
-                    IsLocked = @IsLocked
-                WHERE CustomerID = @CustomerID";
+                UPDATE Customers
+                SET    CustomerName = @CustomerName,
+                       ContactName  = @ContactName,
+                       Province     = @Province,
+                       Address      = @Address,
+                       Phone        = @Phone,
+                       Email        = @Email,
+                       IsLocked     = @IsLocked
+                WHERE  CustomerID   = @CustomerID";
 
-            var parameters = new
+            return await connection.ExecuteAsync(sql, new
             {
                 data.CustomerName,
                 data.ContactName,
@@ -182,40 +215,19 @@ namespace SV22T1020548.DataLayers.SQLServer
                 data.Address,
                 data.Phone,
                 data.Email,
-                data.IsLocked,
+                IsLocked = data.IsLocked ?? false,
                 data.CustomerID
-            };
-
-            int rowsAffected = await connection.ExecuteAsync(sql, parameters);
-            return rowsAffected > 0;
+            }) > 0;
         }
 
-        /// <summary>
-        /// Kiểm tra xem địa chỉ email đã tồn tại trong CSDL hay chưa (tránh trùng lặp)
-        /// </summary>
-        /// <param name="email">Email cần kiểm tra</param>
-        /// <param name="id">Mã khách hàng (0 nếu thêm mới, khác 0 nếu cập nhật)</param>
-        /// <returns>True nếu email hợp lệ (không bị trùng), False nếu email đã được sử dụng</returns>
-        public async Task<bool> ValidateEmailAsync(string email, int id = 0)
+        // ── Helper MD5 ────────────────────────────────────────────────────────
+        private static string ToMD5(string input)
         {
-            using var connection = new SqlConnection(_connectionString);
-
-            // Đếm số lượng khách hàng có cùng Email nhưng khác CustomerID hiện tại
-            string sql = @"
-                SELECT COUNT(*) 
-                FROM Customers 
-                WHERE Email = @Email AND CustomerID <> @CustomerID";
-
-            var parameters = new
-            {
-                Email = email,
-                CustomerID = id
-            };
-
-            int count = await connection.ExecuteScalarAsync<int>(sql, parameters);
-
-            // Nếu count == 0 tức là không bị trùng -> hợp lệ (true)
-            return count == 0;
+            using var md5 = MD5.Create();
+            var bytes = md5.ComputeHash(Encoding.UTF8.GetBytes(input));
+            var sb = new StringBuilder();
+            foreach (var b in bytes) sb.Append(b.ToString("x2"));
+            return sb.ToString();
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using Microsoft.Data.SqlClient;
 using SV22T1020548.DataLayers.Interfaces;
 using SV22T1020548.Models.Common;
@@ -9,7 +9,7 @@ namespace SV22T1020548.DataLayers.SQLServer
     /// <summary>
     /// Cài đặt các phép xử lý dữ liệu cho người giao hàng (Shipper) trên SQL Server
     /// </summary>
-    public class ShipperRepository : IGenericRepository<Shipper>
+    public class ShipperRepository : IShipperRepository
     {
         private readonly string _connectionString;
 
@@ -174,6 +174,24 @@ namespace SV22T1020548.DataLayers.SQLServer
 
             int rowsAffected = await connection.ExecuteAsync(sql, parameters);
             return rowsAffected > 0;
+        }
+
+        public async Task<bool> InUsePhoneAsync(string phone, int excludeShipperID = 0)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            string sql = @"
+                SELECT COUNT(*)
+                FROM Shippers
+                WHERE Phone = @Phone
+                AND ShipperID <> @ExcludeID";
+
+            int count = await connection.ExecuteScalarAsync<int>(sql, new
+            {
+                Phone = (phone ?? "").Trim(),
+                ExcludeID = excludeShipperID
+            });
+
+            return count > 0;
         }
     }
 }

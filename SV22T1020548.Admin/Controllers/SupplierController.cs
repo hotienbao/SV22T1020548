@@ -1,95 +1,207 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using SV22T1020548.Admin.AppCodes;
 using SV22T1020548.BusinessLayers;
 using SV22T1020548.Models.Common;
+using SV22T1020548.Models.Partner;
+using System.Linq;
+using System.Net.Mail;
 using System.Threading.Tasks;
 
 namespace SV22T1020548.Admin.Controllers
 {
+    [Authorize] // BẮT BUỘC ĐĂNG NHẬP
     public class SupplierController : Controller
     {
-        // ========================================================
-        // QUẢN LÝ NHÀ CUNG CẤP (SUPPLIER)
-        // ========================================================
+        private const string SUPPLIER_SEARCH = "SupplierSearchInput";
 
-        /// <summary>
-        /// Giao diện hiển thị danh sách nhà cung cấp
-        /// </summary>
-        public async Task<IActionResult> Index(string searchValue = "", int page = 1)
+        public IActionResult Index()
         {
-            ViewBag.Title = "Quản lý nhà cung cấp";
-            ViewBag.SearchValue = searchValue;
-
-            // Khởi tạo thông tin tìm kiếm và phân trang
-            var input = new PaginationSearchInput
+            var input = ApplicationContext.GetSessionData<PaginationSearchInput>(SUPPLIER_SEARCH) ?? new PaginationSearchInput()
             {
-                Page = page,
-                PageSize = 20, // Số dòng hiển thị trên mỗi trang
-                SearchValue = searchValue ?? ""
+                Page = 1,
+                PageSize = 20,
+                SearchValue = ""
             };
-
-            // Gọi Business Layer để lấy dữ liệu từ DB
-            var result = await PartnerDataService.ListSuppliersAsync(input);
-
-            // Truyền kết quả ra View
-            return View(result);
+            return View(input);
         }
 
-        /// <summary>
-        /// Giao diện form thêm mới nhà cung cấp
-        /// </summary>
-        public IActionResult Create()
+        public async Task<IActionResult> Search(PaginationSearchInput input)
+        {
+            ApplicationContext.SetSessionData(SUPPLIER_SEARCH, input);
+            var result = await PartnerDataService.ListSuppliersAsync(input);
+            return PartialView("Search", result); // Dùng PartialView cho AJAX
+        }
+
+        public async Task<IActionResult> Create()
         {
             ViewBag.Title = "Bổ sung nhà cung cấp";
-            // Tái sử dụng View "Edit" cho chức năng Create để tránh trùng lặp code
-            return View("Edit");
+            ViewBag.Provinces = await SelectListHelper.Provinces();
+            var data = new Supplier() { SupplierID = 0 };
+            return View("Edit", data);
         }
 
-        /// <summary>
-        /// Giao diện form cập nhật thông tin nhà cung cấp
-        /// </summary>
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
-            ViewBag.Title = "Cập nhật thông tin nhà cung cấp";
-            // TODO: Truy vấn Database lấy thông tin của nhà cung cấp theo 'id' và truyền ra View
-            return View();
+            ViewBag.Title = "Cập nhật nhà cung cấp";
+            ViewBag.Provinces = await SelectListHelper.Provinces();
+
+            var supplier = await PartnerDataService.GetSupplierAsync(id);
+            if (supplier == null) return RedirectToAction("Index");
+
+            return View(supplier);
         }
 
-        /// <summary>
-        /// Xử lý dữ liệu từ form Thêm/Sửa (POST)
-        /// </summary>
         [HttpPost]
-        public IActionResult Save(int supplierId, string supplierName, string contactName, string province, string address, string phone, string email)
+        public async Task<IActionResult> Save(Supplier data)
         {
-            // TODO: Kiểm tra tính hợp lệ của dữ liệu đầu vào (Validation)
-            // VD: Tên nhà cung cấp không được để trống, email phải đúng định dạng...
+            if (data == null)
+            {
+                TempData["ErrorMessage"] = "Dữ liệu gửi lên không hợp lệ.";
+                return RedirectToAction("Index");
+            }
 
-            // TODO: Nếu supplierId == 0 -> Thực hiện lệnh Insert vào CSDL
-            // TODO: Nếu supplierId > 0 -> Thực hiện lệnh Update vào CSDL
+            // CHUẨN HÓA DỮ LIỆU: Cắt khoảng trắng 2 đầu
+            data.SupplierName = data.SupplierName?.Trim() ?? "";
+            data.ContactName = data.ContactName?.Trim() ?? "";
+            data.Phone = data.Phone?.Trim() ?? "";
+            data.Email = data.Email?.Trim().ToLowerInvariant() ?? "";
+            data.Address = data.Address?.Trim() ?? "";
+            data.Province = data.Province?.Trim() ?? "";
 
-            // Sau khi lưu thành công thì quay về trang danh sách
+            // VALIDATE DỮ LIỆU BẮT BUỘC
+            if (string.IsNullOrWhiteSpace(data.SupplierName))
+                ModelState.AddModelError(nameof(data.SupplierName), "Tên nhà cung cấp không được để trống");
+
+            if (string.IsNullOrWhiteSpace(data.ContactName))
+                ModelState.AddModelError(nameof(data.ContactName), "Tên giao dịch không được để trống");
+
+            if (string.IsNullOrWhiteSpace(data.Phone))
+                ModelState.AddModelError(nameof(data.Phone), "Vui lòng nhập số điện thoại");
+
+            if (string.IsNullOrWhiteSpace(data.Email))
+                ModelState.AddModelError(nameof(data.Email), "Vui lòng nhập email");
+            else
+            {
+                try { _ = new MailAddress(data.Email); }
+                catch { ModelState.AddModelError("Email", "Email không hợp lệ"); }
+            }
+
+            if (!string.IsNullOrWhiteSpace(data.Phone))
+            {
+                int digits = data.Phone.Count(char.IsDigit);
+                if (digits < 7 || digits > 20)
+                    ModelState.AddModelError("Phone", "Số điện thoại phải có từ 7 đến 20 chữ số");
+            }
+
+            if (!string.IsNullOrWhiteSpace(data.Email))
+            {
+                bool inUseEmail = await PartnerDataService.InUseSupplierEmailAsync(data.Email, data.SupplierID);
+                if (inUseEmail)
+                    ModelState.AddModelError("Email", "Email này đã được sử dụng!");
+            }
+
+            if (!string.IsNullOrWhiteSpace(data.Phone))
+            {
+                bool inUsePhone = await PartnerDataService.InUseSupplierPhoneAsync(data.Phone, data.SupplierID);
+                if (inUsePhone)
+                    ModelState.AddModelError("Phone", "Số điện thoại này đã được sử dụng!");
+            }
+
+            if (string.IsNullOrWhiteSpace(data.Province))
+                ModelState.AddModelError(nameof(data.Province), "Vui lòng chọn Tỉnh/Thành");
+
+            if (string.IsNullOrWhiteSpace(data.Address))
+                ModelState.AddModelError(nameof(data.Address), "Địa chỉ không được để trống");
+
+            // NẾU CÓ LỖI, TRẢ VỀ VIEW KÈM THÔNG BÁO VÀ LOAD LẠI DROPDOWN
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Title = data.SupplierID == 0 ? "Bổ sung nhà cung cấp" : "Cập nhật nhà cung cấp";
+                ViewBag.Provinces = await SelectListHelper.Provinces();
+                return View("Edit", data);
+            }
+
+            // LƯU DATABASE
+            try
+            {
+                if (data.SupplierID == 0)
+                {
+                    int newId = await PartnerDataService.AddSupplierAsync(data);
+                    if (newId <= 0)
+                    {
+                        ModelState.AddModelError("", "Không thể bổ sung nhà cung cấp vào CSDL.");
+                        ViewBag.Title = "Bổ sung nhà cung cấp";
+                        ViewBag.Provinces = await SelectListHelper.Provinces();
+                        return View("Edit", data);
+                    }
+                    TempData["SuccessMessage"] = "Bổ sung nhà cung cấp thành công.";
+                }
+                else
+                {
+                    bool ok = await PartnerDataService.UpdateSupplierAsync(data);
+                    if (!ok)
+                    {
+                        ModelState.AddModelError("", "Không tìm thấy nhà cung cấp để cập nhật.");
+                        ViewBag.Title = "Cập nhật nhà cung cấp";
+                        ViewBag.Provinces = await SelectListHelper.Provinces();
+                        return View("Edit", data);
+                    }
+                    TempData["SuccessMessage"] = "Cập nhật nhà cung cấp thành công.";
+                }
+            }
+            catch
+            {
+                ModelState.AddModelError("", "Có lỗi xảy ra khi lưu nhà cung cấp. Vui lòng thử lại.");
+                ViewBag.Title = data.SupplierID == 0 ? "Bổ sung nhà cung cấp" : "Cập nhật nhà cung cấp";
+                ViewBag.Provinces = await SelectListHelper.Provinces();
+                return View("Edit", data);
+            }
+
             return RedirectToAction("Index");
         }
 
-        /// <summary>
-        /// Giao diện xác nhận xóa nhà cung cấp (GET)
-        /// </summary>
         [HttpGet]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
             ViewBag.Title = "Xóa nhà cung cấp";
-            // TODO: Lấy thông tin nhà cung cấp cần xóa để hiển thị xác nhận.
-            // LƯU Ý: Cần kiểm tra xem nhà cung cấp này có đang cung cấp mặt hàng (Product) nào không.
-            // Nếu có, hệ thống không nên cho phép xóa để tránh lỗi dữ liệu mồ côi (Foreign Key constraint).
-            return View();
+            var supplier = await PartnerDataService.GetSupplierAsync(id);
+            if (supplier == null) return RedirectToAction("Index");
+            return View(supplier);
         }
 
-        /// <summary>
-        /// Thực hiện xóa nhà cung cấp sau khi xác nhận (POST)
-        /// </summary>
         [HttpPost]
-        public IActionResult Delete(int id, bool confirm)
+        public async Task<IActionResult> Delete(int id, bool confirm = true)
         {
-            // TODO: Thực thi câu lệnh Delete trong Database
+            if (id <= 0)
+            {
+                TempData["ErrorMessage"] = "Mã nhà cung cấp không hợp lệ.";
+                return RedirectToAction("Index");
+            }
+
+            try
+            {
+                bool inUse = await PartnerDataService.IsUsedSupplierAsync(id);
+                if (inUse)
+                {
+                    TempData["ErrorMessage"] = "Không thể xóa nhà cung cấp này vì đã có dữ liệu mặt hàng liên quan!";
+                    return RedirectToAction("Index");
+                }
+
+                bool deleted = await PartnerDataService.DeleteSupplierAsync(id);
+                if (!deleted)
+                {
+                    TempData["ErrorMessage"] = "Xóa nhà cung cấp thất bại. Dữ liệu có thể đã thay đổi.";
+                    return RedirectToAction("Index");
+                }
+
+                TempData["SuccessMessage"] = "Đã xóa nhà cung cấp thành công.";
+            }
+            catch
+            {
+                TempData["ErrorMessage"] = "Hệ thống gặp lỗi khi xóa nhà cung cấp.";
+            }
+
             return RedirectToAction("Index");
         }
     }

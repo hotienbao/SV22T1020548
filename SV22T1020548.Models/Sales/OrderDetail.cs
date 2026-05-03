@@ -24,6 +24,7 @@
         /// <summary>
         /// Tổng số tiền
         /// </summary>
-        public decimal TotalPrice => Quantity * SalePrice;        
+        public decimal TotalPrice => Quantity * SalePrice;
+        public string ProductName { get; set; } = "";
     }
 }

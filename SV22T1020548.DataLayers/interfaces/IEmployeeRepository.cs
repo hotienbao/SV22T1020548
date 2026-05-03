@@ -1,4 +1,4 @@
-﻿using SV22T1020548.Models.HR;
+using SV22T1020548.Models.HR;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +13,11 @@ namespace SV22T1020548.DataLayers.Interfaces
     public interface IEmployeeRepository : IGenericRepository<Employee>
     {
         /// <summary>
+        /// Thêm nhân viên mới kèm mật khẩu (MD5) — dùng cho đăng ký Admin
+        /// </summary>
+        Task<int> AddWithPasswordAsync(Employee data, string password);
+
+        /// <summary>
         /// Kiểm tra xem email của nhân viên có hợp lệ không
         /// </summary>
         /// <param name="email">Email cần kiểm tra</param>
@@ -22,5 +27,25 @@ namespace SV22T1020548.DataLayers.Interfaces
         /// </param>
         /// <returns></returns>
         Task<bool> ValidateEmailAsync(string email, int id = 0);
+
+        /// <summary>
+        /// Kiểm tra email đã được sử dụng bởi nhân viên khác hay chưa (true = đang dùng)
+        /// </summary>
+        Task<bool> InUseEmailAsync(string email, int excludeEmployeeID = 0);
+
+        /// <summary>
+        /// Kiểm tra số điện thoại đã được sử dụng bởi nhân viên khác hay chưa (true = đang dùng)
+        /// </summary>
+        Task<bool> InUsePhoneAsync(string phone, int excludeEmployeeID = 0);
+
+        /// <summary>
+        /// Cập nhật danh sách quyền cho nhân viên
+        /// </summary>
+        Task<bool> UpdateRolesAsync(int employeeID, string roleNames);
+
+        /// <summary>
+        /// Cập nhật trạng thái làm việc của nhân viên.
+        /// </summary>
+        Task<bool> UpdateWorkingStatusAsync(int employeeID, bool isWorking);
     }
 }

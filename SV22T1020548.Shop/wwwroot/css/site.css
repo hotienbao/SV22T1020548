@@ -19,4 +19,48 @@ html {
 
 body {
   margin-bottom: 60px;
+  background-color: #f8f9fa;
+}
+
+.navbar-brand {
+  font-weight: 700;
+  font-size: 1.4rem;
+}
+
+.product-card {
+  transition: transform .2s, box-shadow .2s;
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .12) !important;
+}
+
+.cart-badge {
+  font-size: .65rem;
+  top: 4px;
+  right: 4px;
+}
+
+footer {
+  background: #212529;
+  color: #adb5bd;
+}
+
+.alert-float {
+  position: fixed;
+  top: 70px;
+  right: 20px;
+  z-index: 9999;
+  min-width: 300px;
+}
+
+.price-tag {
+  color: #dc3545;
+  font-weight: 700;
+}
+
+.order-status-badge {
+  font-size: .85rem;
+  padding: .4em .7em;
 }

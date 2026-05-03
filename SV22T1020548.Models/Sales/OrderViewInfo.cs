@@ -1,4 +1,4 @@
-﻿namespace SV22T1020548.Models.Sales
+namespace SV22T1020548.Models.Sales
 {
     /// <summary>
     /// Thông tin đầy đủ của một đơn hàng (DTO)
@@ -39,5 +39,7 @@
         /// Điện thoại người giao hàng
         /// </summary>
         public string ShipperPhone { get; set; } = "";
+
+        public decimal TotalAmount { get; set; }
     }
 }

@@ -1,21 +1,30 @@
-﻿using SV22T1020548.Models.Partner;
+using SV22T1020548.Models.Common;
+using SV22T1020548.Models.Partner;
 
 namespace SV22T1020548.DataLayers.Interfaces
 {
-    /// <summary>
-    /// Định nghĩa các phép xử lý dữ liệu trên Customer
-    /// </summary>
     public interface ICustomerRepository : IGenericRepository<Customer>
     {
         /// <summary>
-        /// Kiểm tra xem một địa chỉ email có hợp lệ hay không?
+        /// Thêm khách hàng mới kèm mật khẩu (MD5) — dùng cho đăng ký Shop
         /// </summary>
-        /// <param name="email">Email cần kiểm tra</param>
-        /// <param name="id">
-        /// Nếu id = 0: Kiểm tra email của khách hàng mới.
-        /// Nếu id <> 0: Kiểm tra email đối với khách hàng đã tồn tại
-        /// </param>
-        /// <returns></returns>
-        Task<bool> ValidateEmailAsync(string email, int id = 0);
+        Task<int> AddWithPasswordAsync(Customer data, string password);
+
+        /// <summary>
+        /// Kiểm tra email có thể dùng không (true = chưa bị trùng = hợp lệ)
+        /// </summary>
+        Task<bool> ValidateEmailAsync(string email, int excludeCustomerID = 0);
+
+        /// <summary>
+        /// Kiểm tra email đã được sử dụng bởi khách hàng khác hay chưa (true = đang dùng)
+        /// </summary>
+        Task<bool> InUseEmailAsync(string email, int excludeCustomerID = 0);
+
+        /// <summary>
+        /// Kiểm tra số điện thoại đã được sử dụng bởi khách hàng khác hay chưa (true = đang dùng)
+        /// </summary>
+        Task<bool> InUsePhoneAsync(string phone, int excludeCustomerID = 0);
+
+        Task<int> CountAsync();
     }
 }

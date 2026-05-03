@@ -1,82 +1,113 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using SV22T1020548.Admin.AppCodes;
 using SV22T1020548.BusinessLayers;
+using SV22T1020548.Models.Catalog;
 using SV22T1020548.Models.Common;
 using System.Threading.Tasks;
 
 namespace SV22T1020548.Admin.Controllers
 {
+    [Authorize]
     public class CategoryController : Controller
     {
-        // ========================================================
-        // QUẢN LÝ LOẠI HÀNG HÓA (CATEGORY)
-        // ========================================================
+        private const string CATEGORY_SEARCH = "CategorySearchInput";
 
-        /// <summary>
-        /// Giao diện hiển thị danh sách loại hàng hóa
-        /// </summary>
-        public async Task<IActionResult> Index(string searchValue = "", int page = 1)
+        public IActionResult Index()
         {
-            ViewBag.Title = "Quản lý loại hàng hóa";
-            ViewBag.SearchValue = searchValue;
-
-            var input = new PaginationSearchInput
+            // Lấy trạng thái tìm kiếm từ Session, nếu chưa có thì khởi tạo mặc định
+            var input = ApplicationContext.GetSessionData<PaginationSearchInput>(CATEGORY_SEARCH) ?? new PaginationSearchInput()
             {
-                Page = page,
-                PageSize = 10,
-                SearchValue = searchValue ?? ""
+                Page = 1,
+                PageSize = 20,
+                SearchValue = ""
             };
-
-            // Gọi CatalogDataService để lấy dữ liệu thật
-            var result = await CatalogDataService.ListCategoriesAsync(input);
-            return View(result);
+            return View(input);
         }
 
-        /// <summary>
-        /// Giao diện form thêm mới loại hàng hóa
-        /// </summary>
+        public async Task<IActionResult> Search(PaginationSearchInput input)
+        {
+            var result = await CatalogDataService.ListCategoriesAsync(input);
+            // Lưu lại trạng thái tìm kiếm vào Session
+            ApplicationContext.SetSessionData(CATEGORY_SEARCH, input);
+            return View(result); // Tương đương PartialView vì trong Search.cshtml đã cấu hình Layout = null
+        }
+
         public IActionResult Create()
         {
-            ViewBag.Title = "Thêm loại hàng hóa";
-            return View("Edit");
+            ViewBag.Title = "Bổ sung loại hàng";
+            var data = new Category() { CategoryID = 0 };
+            return View("Edit", data);
         }
 
-        /// <summary>
-        /// Giao diện form cập nhật thông tin loại hàng hóa
-        /// </summary>
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id = 0)
         {
-            ViewBag.Title = "Cập nhật loại hàng hóa";
-            // TODO: Lấy dữ liệu của Category có mã là 'id' từ Database và truyền ra View
-            return View();
+            ViewBag.Title = "Cập nhật loại hàng";
+            var model = await CatalogDataService.GetCategoryAsync(id);
+            if (model == null) return RedirectToAction("Index");
+            return View(model);
         }
 
-        /// <summary>
-        /// Xử lý lưu dữ liệu từ Form
-        /// </summary>
         [HttpPost]
-        public IActionResult Save(int categoryId, string categoryName, string description)
+        public async Task<IActionResult> Save(Category data)
         {
-            // TODO: Xử lý lưu dữ liệu
+            // 1. CHUẨN HÓA DỮ LIỆU (TRIM)
+            data.CategoryName = data.CategoryName?.Trim() ?? "";
+            data.Description = data.Description?.Trim() ?? "";
+
+            // 2. KIỂM TRA ĐẦU VÀO
+            if (string.IsNullOrWhiteSpace(data.CategoryName))
+                ModelState.AddModelError(nameof(data.CategoryName), "Tên loại hàng không được để trống");
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Title = data.CategoryID == 0 ? "Bổ sung loại hàng" : "Cập nhật loại hàng";
+                return View("Edit", data);
+            }
+
+            // 3. LƯU DỮ LIỆU
+            if (data.CategoryID == 0)
+            {
+                await CatalogDataService.AddCategoryAsync(data);
+                TempData["SuccessMessage"] = "Thêm loại hàng thành công!";
+            }
+            else
+            {
+                await CatalogDataService.UpdateCategoryAsync(data);
+                TempData["SuccessMessage"] = "Cập nhật loại hàng thành công!";
+            }
+
             return RedirectToAction("Index");
         }
 
-        /// <summary>
-        /// Giao diện xác nhận xóa loại hàng hóa (GET)
-        /// </summary>
         [HttpGet]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id = 0)
         {
-            ViewBag.Title = "Xóa loại hàng hóa";
-            return View();
+            ViewBag.Title = "Xóa loại hàng";
+            var model = await CatalogDataService.GetCategoryAsync(id);
+            if (model == null) return RedirectToAction("Index");
+            return View(model);
         }
 
-        /// <summary>
-        /// Thực thi lệnh xóa sau khi người dùng nhấn xác nhận (POST)
-        /// </summary>
         [HttpPost]
-        public IActionResult Delete(int id, bool confirm)
+        public async Task<IActionResult> Delete(Category data)
         {
-            // TODO: Thực hiện câu lệnh Delete trong Database
+            // Kiểm tra ràng buộc dữ liệu trước khi xóa
+            if (await CatalogDataService.IsUsedCategoryAsync(data.CategoryID))
+            {
+                TempData["ErrorMessage"] = "Không thể xóa loại hàng này vì đang có mặt hàng liên quan!";
+                return RedirectToAction("Index");
+            }
+
+            try
+            {
+                await CatalogDataService.DeleteCategoryAsync(data.CategoryID);
+                TempData["SuccessMessage"] = "Xóa loại hàng thành công!";
+            }
+            catch
+            {
+                TempData["ErrorMessage"] = "Không thể xóa vì dữ liệu đang được sử dụng ở nơi khác.";
+            }
             return RedirectToAction("Index");
         }
     }

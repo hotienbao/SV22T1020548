@@ -1,24 +1,36 @@
-﻿@model SV22T1020548.Models.Common.PagedResult<SV22T1020548.Models.Partner.Shipper>
+﻿@model SV22T1020548.Models.Common.PaginationSearchInput
 @{
     ViewBag.Title = "Quản lý Người giao hàng";
 }
 
 @section PageToolBar {
     <a href="~/Shipper/Create" class="btn btn-primary d-flex align-items-center ms-1">
-        <i class="bi bi-plus-circle me-1"></i>
-        Bổ sung
+        <i class="bi bi-plus-circle me-1"></i> Bổ sung
     </a>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-3">
+        <i class="bi bi-exclamation-triangle me-1"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
 }
 
 <div class="card mb-3">
     <div class="card-body">
-        <form id="formSearch" action="~/Shipper" method="get">
+        <form id="formSearch"
+              method="get"
+              action="~/Shipper/Search"
+              data-target="searchResult"
+              onsubmit="paginationSearch(event, this, 1)">
+
+            <input type="hidden" asp-for="PageSize" />
+
             <div class="input-group">
-                <input type="text"
-                       name="searchValue"
-                       value="@ViewBag.SearchValue"
+                <input type="text" asp-for="SearchValue"
                        class="form-control"
-                       placeholder="Tên người giao hàng..." autofocus />
+                       placeholder="Nhập tên người giao hàng, số điện thoại..." autofocus />
                 <button type="submit" class="btn btn-info d-flex align-items-center">
                     <i class="bi bi-search me-1"></i>
                 </button>
@@ -27,108 +39,12 @@
     </div>
 </div>
 
-<div class="mb-2 text-muted">
-    Danh sách này có <strong>@Model.RowCount</strong> người giao hàng
-</div>
+<div id="searchResult"></div>
 
-<div class="card">
-    <div class="card-body p-1 table-responsive">
-        <table class="table table-bordered table-hover mb-0">
-            <thead class="table-secondary">
-                <tr>
-                    <th>Tên người giao hàng</th>
-                    <th>Điện thoại</th>
-                    <th class="text-center" style="width:120px;">Thao tác</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (Model.DataItems.Count == 0)
-                {
-                    <tr>
-                        <td colspan="3" class="text-center text-muted">Không tìm thấy người giao hàng nào!</td>
-                    </tr>
-                }
-                else
-                {
-                    foreach (var item in Model.DataItems)
-                    {
-                        <tr>
-                            <td class="align-middle">@item.ShipperName</td>
-                            <td class="align-middle">@item.Phone</td>
-                            <td class="text-center text-nowrap align-middle">
-                                <a href="~/Shipper/Edit/@item.ShipperID" class="btn btn-sm btn-primary me-1" title="Sửa">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <a href="~/Shipper/Delete/@item.ShipperID" class="btn btn-sm btn-danger" title="Xóa">
-                                    <i class="bi bi-trash"></i>
-                                </a>
-                            </td>
-                        </tr>
-                    }
-                }
-            </tbody>
-        </table>
-    </div>
-
-    <div class="card-footer text-center">
-        @{
-            var controllerName = ViewContext.RouteData.Values["controller"];
-        }
-        <ul class="pagination justify-content-center m-0">
-            @if (Model.Page > 1)
-            {
-                <li class="page-item">
-                    <a class="page-link" href="~/@controllerName?searchValue=@ViewBag.SearchValue&page=@(Model.Page - 1)">&laquo;</a>
-                </li>
-            }
-
-            @{
-                int windowSize = 5;
-                int startPage = Math.Max(1, Model.Page - windowSize / 2);
-                int endPage = Math.Min(Model.PageCount, startPage + windowSize - 1);
-
-                if (endPage - startPage + 1 < windowSize)
-                {
-                    startPage = Math.Max(1, endPage - windowSize + 1);
-                }
-            }
-
-            @if (startPage > 1)
-            {
-                <li class="page-item"><a class="page-link" href="~/@controllerName?searchValue=@ViewBag.SearchValue&page=1">1</a></li>
-                if (startPage > 2)
-                {
-                    <li class="page-item disabled"><span class="page-link text-muted">...</span></li>
-                }
-            }
-
-            @for (int p = startPage; p <= endPage; p++)
-            {
-                if (p == Model.Page)
-                {
-                    <li class="page-item active"><span class="page-link">@p</span></li>
-                }
-                else
-                {
-                    <li class="page-item"><a class="page-link" href="~/@controllerName?searchValue=@ViewBag.SearchValue&page=@p">@p</a></li>
-                }
-            }
-
-            @if (endPage < Model.PageCount)
-            {
-                if (endPage < Model.PageCount - 1)
-                {
-                    <li class="page-item disabled"><span class="page-link text-muted">...</span></li>
-                }
-                <li class="page-item"><a class="page-link" href="~/@controllerName?searchValue=@ViewBag.SearchValue&page=@Model.PageCount">@Model.PageCount</a></li>
-            }
-
-            @if (Model.Page < Model.PageCount)
-            {
-                <li class="page-item">
-                    <a class="page-link" href="~/@controllerName?searchValue=@ViewBag.SearchValue&page=@(Model.Page + 1)">&raquo;</a>
-                </li>
-            }
-        </ul>
-    </div>
-</div>
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            paginationSearch(null, document.getElementById("formSearch"), @Model.Page);
+        });
+    </script>
+}

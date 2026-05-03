@@ -1,4 +1,5 @@
-﻿@{
+﻿@model SV22T1020548.Models.Catalog.Category
+@{
     ViewBag.Title = "Xóa loại hàng";
 }
 
@@ -24,7 +25,7 @@
             </div>
 
             <div class="card-body">
-                <form id="formDelete" method="post">
+                <form id="formDelete" action="~/Category/Delete/@Model.CategoryID" method="post">
                     <div class="alert alert-warning d-flex align-items-center">
                         <i class="bi bi-info-circle me-2"></i>
                         Bạn có chắc chắn muốn xóa loại hàng sau không?
@@ -32,11 +33,11 @@
 
                     <dl class="row mb-0">
                         <dt class="col-sm-3">Tên loại hàng</dt>
-                        <dd class="col-sm-9">Đồ điện tử</dd>    
+                        <dd class="col-sm-9">@Model.CategoryName</dd>
 
                         <dt class="col-sm-3">Mô tả</dt>
                         <dd class="col-sm-9">
-                            Các sản phẩm điện tử như TV, máy tính, điện thoại
+                            @Model.Description
                         </dd>
                     </dl>
                 </form>

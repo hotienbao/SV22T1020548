@@ -10,7 +10,7 @@ namespace SV22T1020548.Models.Sales
         /// <summary>
         /// Trạng thái đơn hàng
         /// </summary>
-        public OrderStatusEnum Status { get; set; }
+        public OrderStatusEnum? Status { get; set; }
         /// <summary>
         /// Từ ngày (ngày lập đơn hàng)
         /// </summary>

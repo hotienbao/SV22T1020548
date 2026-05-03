@@ -1,8 +1,10 @@
-﻿using Dapper;
+using Dapper;
 using Microsoft.Data.SqlClient;
 using SV22T1020548.DataLayers.Interfaces;
 using SV22T1020548.Models.Common;
 using SV22T1020548.Models.HR;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace SV22T1020548.DataLayers.SQLServer
 {
@@ -38,6 +40,28 @@ namespace SV22T1020548.DataLayers.SQLServer
             };
 
             return await connection.ExecuteScalarAsync<int>(sql, parameters);
+        }
+
+        public async Task<int> AddWithPasswordAsync(Employee data, string password)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            string sql = @"
+                INSERT INTO Employees (FullName, BirthDate, Address, Phone, Email, Photo, IsWorking, RoleNames, Password)
+                VALUES (@FullName, @BirthDate, @Address, @Phone, @Email, @Photo, @IsWorking, @RoleNames, @Password);
+                SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+            return await connection.ExecuteScalarAsync<int>(sql, new
+            {
+                FullName = (data.FullName ?? "").Trim(),
+                data.BirthDate,
+                Address = (data.Address ?? "").Trim(),
+                Phone = (data.Phone ?? "").Trim(),
+                Email = (data.Email ?? "").Trim().ToLowerInvariant(),
+                Photo = (data.Photo ?? "").Trim(),
+                IsWorking = data.IsWorking ?? true,
+                RoleNames = (data.RoleNames ?? "").Trim(),
+                Password = ToMD5((password ?? "").Trim())
+            });
         }
 
         public async Task<bool> DeleteAsync(int id)
@@ -119,7 +143,8 @@ namespace SV22T1020548.DataLayers.SQLServer
                     Phone = @Phone,
                     Email = @Email,
                     Photo = @Photo,
-                    IsWorking = @IsWorking
+                    IsWorking = @IsWorking,
+                    RoleNames = @RoleNames
                 WHERE EmployeeID = @EmployeeID";
 
             return await connection.ExecuteAsync(sql, data) > 0;
@@ -135,6 +160,81 @@ namespace SV22T1020548.DataLayers.SQLServer
 
             int count = await connection.ExecuteScalarAsync<int>(sql, new { Email = email, EmployeeID = id });
             return count == 0;
+        }
+
+        public async Task<bool> InUseEmailAsync(string email, int excludeEmployeeID = 0)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            string sql = @"
+                SELECT COUNT(*)
+                FROM Employees
+                WHERE LOWER(Email) = @Email
+                AND EmployeeID <> @ExcludeID";
+
+            int count = await connection.ExecuteScalarAsync<int>(sql, new
+            {
+                Email = (email ?? "").Trim().ToLowerInvariant(),
+                ExcludeID = excludeEmployeeID
+            });
+
+            return count > 0;
+        }
+
+        public async Task<bool> InUsePhoneAsync(string phone, int excludeEmployeeID = 0)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            string sql = @"
+                SELECT COUNT(*)
+                FROM Employees
+                WHERE Phone = @Phone
+                AND EmployeeID <> @ExcludeID";
+
+            int count = await connection.ExecuteScalarAsync<int>(sql, new
+            {
+                Phone = (phone ?? "").Trim(),
+                ExcludeID = excludeEmployeeID
+            });
+
+            return count > 0;
+        }
+
+        public async Task<bool> UpdateRolesAsync(int employeeID, string roleNames)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            string sql = @"
+                UPDATE Employees
+                SET RoleNames = @RoleNames
+                WHERE EmployeeID = @EmployeeID";
+
+            return await connection.ExecuteAsync(sql, new
+            {
+                EmployeeID = employeeID,
+                RoleNames = roleNames
+            }) > 0;
+        }
+
+        public async Task<bool> UpdateWorkingStatusAsync(int employeeID, bool isWorking)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            string sql = @"
+                UPDATE Employees
+                SET IsWorking = @IsWorking
+                WHERE EmployeeID = @EmployeeID";
+
+            return await connection.ExecuteAsync(sql, new
+            {
+                EmployeeID = employeeID,
+                IsWorking = isWorking
+            }) > 0;
+        }
+
+        private static string ToMD5(string input)
+        {
+            using var md5 = MD5.Create();
+            var bytes = md5.ComputeHash(Encoding.UTF8.GetBytes(input));
+            var sb = new StringBuilder();
+            foreach (var b in bytes) sb.Append(b.ToString("x2"));
+            return sb.ToString();
         }
     }
 }

@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\homework\\SV22T1020548\\SV22T1020548.Shop\\SV22T1020548.Shop.csproj": {}
+    "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.Shop\\SV22T1020548.Shop.csproj": {}
   },
   "projects": {
-    "D:\\homework\\SV22T1020548\\SV22T1020548.BusinessLayers\\SV22T1020548.BusinessLayers.csproj": {
+    "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.BusinessLayers\\SV22T1020548.BusinessLayers.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\homework\\SV22T1020548\\SV22T1020548.BusinessLayers\\SV22T1020548.BusinessLayers.csproj",
+        "projectUniqueName": "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.BusinessLayers\\SV22T1020548.BusinessLayers.csproj",
         "projectName": "SV22T1020548.BusinessLayers",
-        "projectPath": "D:\\homework\\SV22T1020548\\SV22T1020548.BusinessLayers\\SV22T1020548.BusinessLayers.csproj",
+        "projectPath": "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.BusinessLayers\\SV22T1020548.BusinessLayers.csproj",
         "packagesPath": "C:\\Users\\hotie\\.nuget\\packages\\",
-        "outputPath": "D:\\homework\\SV22T1020548\\SV22T1020548.BusinessLayers\\obj\\",
+        "outputPath": "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.BusinessLayers\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -32,11 +32,11 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "D:\\homework\\SV22T1020548\\SV22T1020548.DataLayers\\SV22T1020548.DataLayers.csproj": {
-                "projectPath": "D:\\homework\\SV22T1020548\\SV22T1020548.DataLayers\\SV22T1020548.DataLayers.csproj"
+              "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.DataLayers\\SV22T1020548.DataLayers.csproj": {
+                "projectPath": "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.DataLayers\\SV22T1020548.DataLayers.csproj"
               },
-              "D:\\homework\\SV22T1020548\\SV22T1020548.Models\\SV22T1020548.Models.csproj": {
-                "projectPath": "D:\\homework\\SV22T1020548\\SV22T1020548.Models\\SV22T1020548.Models.csproj"
+              "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.Models\\SV22T1020548.Models.csproj": {
+                "projectPath": "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.Models\\SV22T1020548.Models.csproj"
               }
             }
           }
@@ -76,14 +76,14 @@
         }
       }
     },
-    "D:\\homework\\SV22T1020548\\SV22T1020548.DataLayers\\SV22T1020548.DataLayers.csproj": {
+    "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.DataLayers\\SV22T1020548.DataLayers.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\homework\\SV22T1020548\\SV22T1020548.DataLayers\\SV22T1020548.DataLayers.csproj",
+        "projectUniqueName": "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.DataLayers\\SV22T1020548.DataLayers.csproj",
         "projectName": "SV22T1020548.DataLayers",
-        "projectPath": "D:\\homework\\SV22T1020548\\SV22T1020548.DataLayers\\SV22T1020548.DataLayers.csproj",
+        "projectPath": "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.DataLayers\\SV22T1020548.DataLayers.csproj",
         "packagesPath": "C:\\Users\\hotie\\.nuget\\packages\\",
-        "outputPath": "D:\\homework\\SV22T1020548\\SV22T1020548.DataLayers\\obj\\",
+        "outputPath": "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.DataLayers\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -104,8 +104,8 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "D:\\homework\\SV22T1020548\\SV22T1020548.Models\\SV22T1020548.Models.csproj": {
-                "projectPath": "D:\\homework\\SV22T1020548\\SV22T1020548.Models\\SV22T1020548.Models.csproj"
+              "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.Models\\SV22T1020548.Models.csproj": {
+                "projectPath": "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.Models\\SV22T1020548.Models.csproj"
               }
             }
           }
@@ -155,14 +155,14 @@
         }
       }
     },
-    "D:\\homework\\SV22T1020548\\SV22T1020548.Models\\SV22T1020548.Models.csproj": {
+    "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.Models\\SV22T1020548.Models.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\homework\\SV22T1020548\\SV22T1020548.Models\\SV22T1020548.Models.csproj",
+        "projectUniqueName": "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.Models\\SV22T1020548.Models.csproj",
         "projectName": "SV22T1020548.Models",
-        "projectPath": "D:\\homework\\SV22T1020548\\SV22T1020548.Models\\SV22T1020548.Models.csproj",
+        "projectPath": "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.Models\\SV22T1020548.Models.csproj",
         "packagesPath": "C:\\Users\\hotie\\.nuget\\packages\\",
-        "outputPath": "D:\\homework\\SV22T1020548\\SV22T1020548.Models\\obj\\",
+        "outputPath": "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.Models\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -220,14 +220,14 @@
         }
       }
     },
-    "D:\\homework\\SV22T1020548\\SV22T1020548.Shop\\SV22T1020548.Shop.csproj": {
+    "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.Shop\\SV22T1020548.Shop.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\homework\\SV22T1020548\\SV22T1020548.Shop\\SV22T1020548.Shop.csproj",
+        "projectUniqueName": "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.Shop\\SV22T1020548.Shop.csproj",
         "projectName": "SV22T1020548.Shop",
-        "projectPath": "D:\\homework\\SV22T1020548\\SV22T1020548.Shop\\SV22T1020548.Shop.csproj",
+        "projectPath": "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.Shop\\SV22T1020548.Shop.csproj",
         "packagesPath": "C:\\Users\\hotie\\.nuget\\packages\\",
-        "outputPath": "D:\\homework\\SV22T1020548\\SV22T1020548.Shop\\obj\\",
+        "outputPath": "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.Shop\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -248,14 +248,14 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "D:\\homework\\SV22T1020548\\SV22T1020548.BusinessLayers\\SV22T1020548.BusinessLayers.csproj": {
-                "projectPath": "D:\\homework\\SV22T1020548\\SV22T1020548.BusinessLayers\\SV22T1020548.BusinessLayers.csproj"
+              "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.BusinessLayers\\SV22T1020548.BusinessLayers.csproj": {
+                "projectPath": "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.BusinessLayers\\SV22T1020548.BusinessLayers.csproj"
               },
-              "D:\\homework\\SV22T1020548\\SV22T1020548.DataLayers\\SV22T1020548.DataLayers.csproj": {
-                "projectPath": "D:\\homework\\SV22T1020548\\SV22T1020548.DataLayers\\SV22T1020548.DataLayers.csproj"
+              "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.DataLayers\\SV22T1020548.DataLayers.csproj": {
+                "projectPath": "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.DataLayers\\SV22T1020548.DataLayers.csproj"
               },
-              "D:\\homework\\SV22T1020548\\SV22T1020548.Models\\SV22T1020548.Models.csproj": {
-                "projectPath": "D:\\homework\\SV22T1020548\\SV22T1020548.Models\\SV22T1020548.Models.csproj"
+              "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.Models\\SV22T1020548.Models.csproj": {
+                "projectPath": "D:\\HOTIENBAO\\SV22T1020548\\SV22T1020548.Models\\SV22T1020548.Models.csproj"
               }
             }
           }

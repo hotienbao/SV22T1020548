@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using Microsoft.Data.SqlClient;
 using SV22T1020548.DataLayers.Interfaces;
 using SV22T1020548.Models.Catalog;
@@ -26,8 +26,8 @@ namespace SV22T1020548.DataLayers.SQLServer
         {
             using var connection = new SqlConnection(_connectionString);
             string sql = @"
-                INSERT INTO Products (ProductName, ProductDescription, SupplierID, CategoryID, Unit, Price, Photo, IsSelling)
-                VALUES (@ProductName, @ProductDescription, @SupplierID, @CategoryID, @Unit, @Price, @Photo, @IsSelling);
+                INSERT INTO Products (ProductName, ProductDescription, SupplierID, CategoryID, Unit, Price, Quantity, Photo, IsSelling)
+                VALUES (@ProductName, @ProductDescription, @SupplierID, @CategoryID, @Unit, @Price, @Quantity, @Photo, @IsSelling);
                 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
             var parameters = new
@@ -38,6 +38,7 @@ namespace SV22T1020548.DataLayers.SQLServer
                 data.CategoryID,
                 data.Unit,
                 data.Price,
+                data.Quantity,
                 data.Photo,
                 data.IsSelling
             };
@@ -149,12 +150,19 @@ namespace SV22T1020548.DataLayers.SQLServer
                     CategoryID = @CategoryID,
                     Unit = @Unit,
                     Price = @Price,
+                    Quantity = @Quantity,
                     Photo = @Photo,
                     IsSelling = @IsSelling
                 WHERE ProductID = @ProductID";
 
             int rowsAffected = await connection.ExecuteAsync(sql, data);
             return rowsAffected > 0;
+        }
+
+        public async Task<int> CountAsync()
+        {
+            using var connection = new SqlConnection(_connectionString);
+            return await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM Products");
         }
 
         // ==========================================================

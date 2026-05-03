@@ -1,0 +1,173 @@
+@model SV22T1020548.Models.Common.PagedResult<SV22T1020548.Models.Catalog.Product>
+@using SV22T1020548.Models.Catalog
+
+@{
+    string searchValue = ViewBag.SearchValue ?? "";
+    int categoryID = (int)(ViewBag.CategoryID ?? 0);
+    decimal minPrice = (decimal)(ViewBag.MinPrice ?? 0m);
+    decimal maxPrice = (decimal)(ViewBag.MaxPrice ?? 0m);
+
+    bool hasFilters =
+        !string.IsNullOrEmpty(searchValue) ||
+        categoryID > 0 ||
+        minPrice > 0 ||
+        maxPrice > 0;
+
+    int totalPages = Model.PageCount;
+    int currentPage = Model.Page;
+    int windowSize = 2; // 2 trang mỗi bên => tối đa 5 trang quanh current
+
+    int startPage = Math.Max(1, currentPage - windowSize);
+    int endPage = Math.Min(totalPages, currentPage + windowSize);
+
+    if (endPage - startPage + 1 < 5)
+    {
+        int missing = 5 - (endPage - startPage + 1);
+        if (startPage > 1) startPage = Math.Max(1, startPage - missing);
+        else if (endPage < totalPages) endPage = Math.Min(totalPages, endPage + missing);
+    }
+}
+
+@if (hasFilters)
+{
+    <div class="mt-2 mb-3 d-flex align-items-center gap-2">
+        <a asp-controller="Product" asp-action="Index" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-x-circle me-1"></i>Xóa bộ lọc
+        </a>
+        <span class="text-muted small">
+            Tìm thấy <strong>@Model.RowCount</strong> sản phẩm
+        </span>
+    </div>
+}
+
+<!-- DANH SÁCH SẢN PHẨM -->
+@if (!Model.DataItems.Any())
+{
+    <div class="text-center py-5">
+        <i class="bi bi-search text-muted" style="font-size:3rem"></i>
+        <h5 class="mt-3 text-muted">Không tìm thấy sản phẩm phù hợp</h5>
+        <a asp-controller="Product" asp-action="Index" class="btn btn-outline-primary mt-2">Xem tất cả sản phẩm</a>
+    </div>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+        @foreach (var p in Model.DataItems)
+        {
+            <div class="col">
+                <div class="card h-100 border-0 shadow-sm product-card">
+                    <a asp-controller="Product" asp-action="Detail" asp-route-id="@p.ProductID">
+                        <img src="@(string.IsNullOrEmpty(p.Photo)
+                                        ? "/images/nophoto.svg"
+                                        : (p.Photo.StartsWith("nophoto.", StringComparison.OrdinalIgnoreCase)
+                                            ? $"/images/{p.Photo}"
+                                            : (p.Photo.StartsWith("products/", StringComparison.OrdinalIgnoreCase)
+                                                ? $"/images/{p.Photo}"
+                                                : $"/images/products/{p.Photo}")))"
+                             class="card-img-top"
+                             alt="@p.ProductName"
+                             style="width: 100%; height: 250px; object-fit: cover;"
+                             onerror="this.onerror=null; this.src='/images/nophoto.svg';" />
+                    </a>
+                    <div class="card-body d-flex flex-column p-3">
+                        <p class="card-text text-muted small mb-1">@p.CategoryName</p>
+                        <h6 class="card-title fw-semibold mb-2 text-truncate" title="@p.ProductName">
+                            <a asp-controller="Product" asp-action="Detail" asp-route-id="@p.ProductID"
+                               class="text-dark text-decoration-none">@p.ProductName</a>
+                        </h6>
+                        <p class="price-tag fs-6 mb-3">@p.Price.ToString("N0") đ</p>
+                        <div class="mt-auto d-grid gap-2">
+                            <button onclick="addToCart(@p.ProductID, this)"
+                                    class="btn btn-success btn-sm fw-semibold">
+                                <i class="bi bi-cart-plus me-1"></i>Thêm vào giỏ
+                            </button>
+                            <a asp-controller="Product" asp-action="Detail" asp-route-id="@p.ProductID"
+                               class="btn btn-outline-secondary btn-sm">
+                                Xem chi tiết
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- PHÂN TRANG -->
+    @if (Model.PageCount > 1)
+    {
+        <nav class="mt-4 d-flex justify-content-between align-items-center">
+            <span class="text-muted small">
+                Trang @Model.Page / @Model.PageCount
+                (Tổng: @Model.RowCount sản phẩm)
+            </span>
+
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                    @if (currentPage == 1)
+                    {
+                        <span class="page-link" aria-hidden="true">&laquo;&laquo;</span>
+                    }
+                    else
+                    {
+                        <a class="page-link shop-page-link" href="javascript:;"
+                           data-page="1" aria-label="Trang đầu">&laquo;&laquo;</a>
+                    }
+                </li>
+
+                <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                    @if (currentPage == 1)
+                    {
+                        <span class="page-link" aria-hidden="true">&laquo;</span>
+                    }
+                    else
+                    {
+                        <a class="page-link shop-page-link" href="javascript:;"
+                           data-page="@(currentPage - 1)" aria-label="Trang trước">&laquo;</a>
+                    }
+                </li>
+
+                @for (int p = startPage; p <= endPage; p++)
+                {
+                    if (p == 1 || p == totalPages) { continue; }
+
+                    if (p == currentPage)
+                    {
+                        <li class="page-item active"><span class="page-link">@p</span></li>
+                    }
+                    else
+                    {
+                        <li class="page-item">
+                            <a class="page-link shop-page-link" href="javascript:;"
+                               data-page="@p">@p</a>
+                        </li>
+                    }
+                }
+
+                <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                    @if (currentPage == totalPages)
+                    {
+                        <span class="page-link" aria-hidden="true">&raquo;</span>
+                    }
+                    else
+                    {
+                        <a class="page-link shop-page-link" href="javascript:;"
+                           data-page="@(currentPage + 1)" aria-label="Trang tiếp">&raquo;</a>
+                    }
+                </li>
+
+                <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                    @if (currentPage == totalPages)
+                    {
+                        <span class="page-link" aria-hidden="true">&raquo;&raquo;</span>
+                    }
+                    else
+                    {
+                        <a class="page-link shop-page-link" href="javascript:;"
+                           data-page="@totalPages" aria-label="Trang cuối">&raquo;&raquo;</a>
+                    }
+                </li>
+            </ul>
+        </nav>
+    }
+}
+

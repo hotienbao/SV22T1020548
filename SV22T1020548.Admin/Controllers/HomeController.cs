@@ -1,5 +1,8 @@
 using System.Diagnostics;
+using System;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SV22T1020548.BusinessLayers;
 using SV22T1020548.Admin.Models;
 
 namespace SV22T1020548.Admin.Controllers
@@ -7,6 +10,7 @@ namespace SV22T1020548.Admin.Controllers
     /// <summary>
     /// Controller quản lý các trang chung của hệ thống quản trị (Trang chủ, Thông tin, Báo lỗi...)
     /// </summary>
+    [Authorize]
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
@@ -25,10 +29,12 @@ namespace SV22T1020548.Admin.Controllers
         /// Thường dùng để hiển thị các biểu đồ, số liệu thống kê tổng quan (Tổng doanh thu, số đơn hàng mới,...).
         /// </summary>
         /// <returns>View Index.cshtml</returns>
-        public IActionResult Index()
+        [AllowAnonymous]
+        public async Task<IActionResult> Index()
         {
             ViewBag.Title = "Bảng điều khiển (Dashboard)";
-            return View();
+            var model = await ReportDataService.GetDashboardAsync(DateTime.Now.Year);
+            return View(model);
         }
 
         /// <summary>

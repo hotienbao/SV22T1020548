@@ -1,38 +1,59 @@
-﻿using SV22T1020548.DataLayers;
 using SV22T1020548.DataLayers.Interfaces;
 using SV22T1020548.DataLayers.SQLServer;
 using SV22T1020548.Models.Common;
 using SV22T1020548.Models.DataDictionary;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using SV22T1020548.Models.Partner;
 
 namespace SV22T1020548.BusinessLayers
 {
     /// <summary>
-    /// Lớp cung cấp các chức năng liên quan đến dữ liệu từ điển/danh mục dùng chung
-    /// (Ví dụ: Tỉnh thành, Quốc gia...)
+    /// Cung cấp các chức năng xử lý dữ liệu liên quan đến các danh mục từ điển (Tỉnh/Thành, Người giao hàng...)
     /// </summary>
     public static class DictionaryDataService
     {
         private static readonly IDataDictionaryRepository<Province> provinceDB;
+        private static readonly IShipperRepository shipperDB;
 
-        /// <summary>
-        /// Constructor
-        /// </summary>
         static DictionaryDataService()
         {
             provinceDB = new ProvinceRepository(Configuration.ConnectionString);
+            shipperDB = new ShipperRepository(Configuration.ConnectionString);
         }
 
         /// <summary>
-        /// Lấy danh sách toàn bộ các Tỉnh/Thành phố
+        /// Lấy danh sách Tỉnh/Thành phố
         /// </summary>
-        /// <returns>Danh sách Tỉnh/Thành phố</returns>
         public static async Task<List<Province>> ListProvincesAsync()
         {
-            return await provinceDB.ListAsync();
+            try
+            {
+                return await provinceDB.ListAsync();
+            }
+            catch
+            {
+                return new List<Province>();
+            }
         }
 
-        // (Bạn có thể bổ sung các hàm CRUD cho Tỉnh/Thành nếu hệ thống yêu cầu quản lý Tỉnh/Thành)
+        /// <summary>
+        /// Lấy danh sách người giao hàng (Shipper)
+        /// </summary>
+        public static async Task<List<Shipper>> ListShippersAsync(string searchValue = "")
+        {
+            try
+            {
+                var data = await shipperDB.ListAsync(new PaginationSearchInput
+                {
+                    Page = 1,
+                    PageSize = 0,
+                    SearchValue = searchValue
+                });
+                return data.DataItems;
+            }
+            catch
+            {
+                return new List<Shipper>();
+            }
+        }
     }
 }
